@@ -1,0 +1,7 @@
+# Skip output files
+bin/
+
+# Skip build objects
+*/Debug/
+*/x64/
+.vs/
