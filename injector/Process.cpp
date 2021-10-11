@@ -81,7 +81,6 @@ DWORD Process::wait_for_process(int timeout) {
     while (timeout == -1 || elapsed < timeout) {
         // Look for process by name
         HANDLE snapshot;
-        HANDLE process_handle;
         PROCESSENTRY32 pe32;
         pe32.dwSize = sizeof(PROCESSENTRY32);
         // Gets a snapshot of the entire system (https://docs.microsoft.com/en-us/windows/win32/api/tlhelp32/nf-tlhelp32-createtoolhelp32snapshot)
