@@ -5,9 +5,10 @@
 #include <cassert>
 
 
-Process::Process(std::wstring name, DWORD pid) {
+Process::Process(std::wstring name, DWORD pid, bool is_64bit) {
     this->name = std::wstring(name);
     this->id = pid;
+    this->m_is_64bit = is_64bit;
 }
 Process::~Process() {
 
@@ -75,9 +76,10 @@ bool Process::inject_dll(const char* dll_path) {
     return true;
 }
 
-DWORD Process::wait_for_process(int timeout) {
+std::vector<Process*> Process::get_pids_by_name(std::wstring name, int timeout) {
     int elapsed = 0;
     auto start_time = std::chrono::steady_clock::now();
+    std::vector<Process*> processes;
     while (timeout == -1 || elapsed < timeout) {
         // Look for process by name
         HANDLE snapshot;
@@ -89,28 +91,34 @@ DWORD Process::wait_for_process(int timeout) {
         if (!Process32First(snapshot, &pe32)) {
             DBG_LOG("Couldn't fetch processes on the system.\n");
             CloseHandle(snapshot);
-            return NULL;
+            return processes;
         }
         do {
-            if (!wcscmp(pe32.szExeFile, this->name.c_str())) {
+            if (!wcscmp(pe32.szExeFile, name.c_str())) {
                 // We found our process, we save its informations such as process id and architecture
                 DBG_LOG("Found process %ws with PID %d", pe32.szExeFile, pe32.th32ProcessID);
-                this->id = pe32.th32ProcessID;
+                DWORD pid = pe32.th32ProcessID;
                 BOOL is_wow64 = false;
                 HANDLE process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pe32.th32ProcessID);
                 IsWow64Process(process_handle, &is_wow64);
                 CloseHandle(process_handle);
-                this->m_is_64bit = is_wow64 == false; // wow64 = 32bit emulator
-                CloseHandle(snapshot);
-                return this->id;
+                bool is_64bit = is_wow64 == false; // wow64 = 32bit emulator
+                Process* p = new Process(name, pid, is_64bit);
+                processes.push_back(p);
             }
         } while (Process32Next(snapshot, &pe32));
 
+        CloseHandle(snapshot);
+        // If we found something then we can return
+        if (processes.size() > 0) {
+            return processes;
+        }
+        
         // Update timer
         Sleep(25);
         auto current_time = std::chrono::steady_clock::now();
         elapsed = std::round(std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count());
     }
     DBG_LOG("Couldn't find the process within the time allocation.");
-    return NULL;
+    return processes;
 }

@@ -13,15 +13,15 @@ private:
 	bool m_is_64bit = true;
 public:
 
-	Process(std::wstring name, DWORD pid = 0);
+	Process(std::wstring name, DWORD pid = 0, bool is_64bit=true);
 	~Process();
-
 	/// <summary>
-	/// Waits until the process is found on the system and assigns its process id
+	/// Resolves processes with a given name within a certain timeout.
 	/// </summary>
-	/// <param name="timeout">Time in miliseconds to wait before abandoning. -1 to wait undefinitely</param>
-	/// <returns>Process id</returns>
-	DWORD wait_for_process(int timeout = -1);
+	/// <param name="name">Name of the processes to fetch</param>
+	/// <param name="timeout">Timeout in milliseconds before aborting, can be -1 to wait undefinitely</param>
+	/// <returns>A vector of heap allocated processes instances</returns>
+	static std::vector<Process*> get_pids_by_name(std::wstring name, int timeout=-1);
 
 	/// <summary>
 	/// Gets the address of LoadLibraryA depending on architecture of remote process
