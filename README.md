@@ -1,2 +1,2 @@
-# fs_monitor
-An API monitor for filesystem operations
+# Filesystem access monitor
+An API monitor for filesystem operations on a targeted application.
